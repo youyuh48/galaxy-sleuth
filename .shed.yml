@@ -1,0 +1,8 @@
+categories: [Transcriptomics]
+description: Galaxy wrapper for the Sleuth package.
+homepage_url: https://pachterlab.github.io/sleuth/
+long_description: Sleuth is an R library for analysis of RNA-Seq experiments for which
+  transcript abundances have been quantified with kallisto.
+name: sleuth
+owner: youyuh48
+remote_repository_url: https://github.com/youyuh48/galaxy-sleuth/tree/master/
