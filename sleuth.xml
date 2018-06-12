@@ -1,0 +1,83 @@
+<tool id="sleuth" name="sleuth" version="0.30.0">
+  <description>Sleuth is an R library for analysis of RNA-Seq experiments for which transcript abundances have been quantified with kallisto.</description>
+  <requirements>
+    <container type="docker">youyuh48/sleuth:0.30.0</container>
+  </requirements>
+  <version_command>
+    <![CDATA[
+      echo $(R --version | grep version | grep -v GNU)", r-sleuth version" $(R --vanilla --slave -e "library(sleuth); cat(sessionInfo()\$otherPkgs\$sleuth\$Version)" 2> /dev/null | grep -v -i "WARNING: ")
+    ]]>
+  </version_command>
+  <command detect_errors="aggressive">
+    <![CDATA[
+      #import re
+      ## create symlinks to input datasets
+      #for $file in $input_files
+        #set $sname = re.sub('\.h5$', '', str($file.element_identifier))
+        mkdir -p 'data/${sname}/kallisto' &&
+        ln -s '$file' 'data/${sname}/kallisto/abundance.h5' &&
+      #end for
+
+      Rscript '${__tool_directory__}/sleuth.R'
+        --indir 'data'
+        --metadata '$metadata'
+        --full_model '~${full_model}'
+        --reduced_model '~${reduced_model}'
+        #if $anno.biomart == "Yes"
+        --gene_anno_name '$anno.gene_anno_name'
+        #end if
+      && tar zcvf sleuth_shiny.tar.gz data/app.R data/so.rds
+    ]]>
+  </command>
+  <inputs>
+    <param name="input_files" type="data" format="h5" label="Select Abundance(HDF5) Datasets" min="2" multiple="True"/>
+    <param name="metadata" type="data" format="txt,tsv,tabular" label="Metadata file"/>
+    <param name="full_model" type="text" value="condition" label="Full model"/>
+    <param name="reduced_model" type="text" value="1" label="Reduced model"/>
+    <conditional name="anno">
+      <param name="biomart" type="select" label="Use BioMart?" help="">
+        <option value="Yes">Yes</option>
+        <option value="No">No</option>
+      </param>
+      <when value="Yes">
+        <param name="gene_anno_name" type="select" label="BioMart dataset">
+          <option value="hsapiens_gene_ensembl" selected="true">homo_sapiens</option>
+        </param>
+      </when>
+      <when value="No"></when>
+    </conditional>
+  </inputs>
+  <outputs>
+    <data name="output" format="tar" label="${tool.name} on ${on_string}: R Shiny app" from_work_dir="sleuth_shiny.tar.gz"/>
+  </outputs>
+  <tests>
+    <test>
+      <param name="input_files" value="SRR1867792.h5,SRR1909613.h5,SRR1909637.h5"/>
+      <param name="metadata" value="metadata.txt"/>
+      <output name="output" file="sleuth_shiny.tar.gz" ftype="tar"/>
+    </test>
+  </tests>
+  <help>
+    <![CDATA[
+This is a Galaxy wrapper for the Sleuth package.
+
+**Input file format of metadata**
+
+sample      condition
+---------------------
+SRR1867792  ESC
+SRR1909613  BM-MSC
+SRR1909637  BM-MSC
+
+**Output**
+
+This wrapper script generates Shiny web application files for RStudio.
+Unzip sleuth_shiny.tar.gz file, then run app.R file in RStudio.
+]]>
+  </help>
+  <citations>
+    <citation type="bibtex">
+      @misc{githubsleuth, title = {sleuth}, publisher = {GitHub}, journal = {GitHub repository}, url = {https://pachterlab.github.io/sleuth/}, }
+    </citation>
+  </citations>
+</tool>
